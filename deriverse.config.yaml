@@ -1,15 +1,15 @@
 global:
   # devnet or mainnet-beta
-  driftEnv: mainnet-beta
+  driftEnv: devnet
 
   # RPC endpoint to use
-  endpoint: http://localhost:8899
+  endpoint: http://127.0.0.1:8899
 
   # Custom websocket endpoint to use (if null will be determined from `endpoint``)
   # Note: the default wsEndpoint value simply replaces http(s) with ws(s), so if
   #       your RPC provider requires a special path (i.e. /ws) for websocket connections
   #       you must set this.
-  wsEndpoint: ws://localhost:8900
+  wsEndpoint: ws://127.0.0.1:8900
 
   # optional if you want to use helius' global priority fee method AND `endpoint` is not
   # already a helius url.
@@ -17,7 +17,7 @@ global:
 
   # optional endpoint to use for just confirming txs to check if they landed.
   # loop purposefully runs slow so should work with public RPC
-  txConfirmationEndpoint: http://localhost:8899
+  txConfirmationEndpoint: http://127.0.0.1:8899
 
   # `solana` or `helius`. If `helius` `endpoint` must be a helius RPC, or `heliusEndpoint`
   #   must be set
@@ -38,9 +38,9 @@ global:
 
   # Private key to use to sign transactions.
   # will load from KEEPER_PRIVATE_KEY env var if null
-  keeperPrivateKey:
+  keeperPrivateKey: 4SEGrgoBx5FrXKYEcA2pFc8PE9yxKd2ezGUqA3AfJ3RQEhid4N1Li588VKSf9jbZCaTxUQJf3tCmD6R8qFHKogyB
 
-  initUser: false # initialize user on startup
+  initUser: true # initialize user on startup
   testLiveness: false # test liveness, by failing liveness test after 1 min
 
   # Force deposit this amount of USDC to collateral account, the program will
