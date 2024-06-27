@@ -23,7 +23,7 @@ import {
 	findDirectionToClose,
 	getSignedTokenAmount,
 	standardizeBaseAssetAmount,
-	TEN_THOUSAND,
+	//TEN_THOUSAND,
 	PositionDirection,
 	isUserBankrupt,
 	JupiterClient,
@@ -50,22 +50,22 @@ import {
 } from '@drift-labs/sdk';
 
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
-import {
-	ExplicitBucketHistogramAggregation,
-	InstrumentType,
-	MeterProvider,
-	View,
-} from '@opentelemetry/sdk-metrics-base';
+// import {
+// 	ExplicitBucketHistogramAggregation,
+// 	InstrumentType,
+// 	MeterProvider,
+// 	View,
+// } from '@opentelemetry/sdk-metrics-base';
 import {
 	Meter,
 	ObservableGauge,
-	BatchObservableResult,
+	//BatchObservableResult,
 	Histogram,
 } from '@opentelemetry/api-metrics';
 
 import { logger } from '../logger';
 import { Bot, TwapExecutionProgress } from '../types';
-import { RuntimeSpec, metricAttrFromUserAccount } from '../metrics';
+import { RuntimeSpec /*metricAttrFromUserAccount*/ } from '../metrics';
 import { webhookMessage } from '../webhook';
 import { LiquidatorConfig } from '../config';
 import {
@@ -138,23 +138,23 @@ function calculateSpotTokenAmountToLiquidate(
 	}
 }
 
-enum METRIC_TYPES {
-	total_leverage = 'total_leverage',
-	total_collateral = 'total_collateral',
-	free_collateral = 'free_collateral',
-	perp_posiiton_value = 'perp_position_value',
-	perp_posiiton_base = 'perp_position_base',
-	perp_posiiton_quote = 'perp_position_quote',
-	initial_margin_requirement = 'initial_margin_requirement',
-	maintenance_margin_requirement = 'maintenance_margin_requirement',
-	initial_margin = 'initial_margin',
-	maintenance_margin = 'maintenance_margin',
-	unrealized_pnl = 'unrealized_pnl',
-	unrealized_funding_pnl = 'unrealized_funding_pnl',
-	sdk_call_duration_histogram = 'sdk_call_duration_histogram',
-	runtime_specs = 'runtime_specs',
-	user_map_user_account_keys = 'user_map_user_account_keys',
-}
+// enum METRIC_TYPES {
+// 	total_leverage = 'total_leverage',
+// 	total_collateral = 'total_collateral',
+// 	free_collateral = 'free_collateral',
+// 	perp_posiiton_value = 'perp_position_value',
+// 	perp_posiiton_base = 'perp_position_base',
+// 	perp_posiiton_quote = 'perp_position_quote',
+// 	initial_margin_requirement = 'initial_margin_requirement',
+// 	maintenance_margin_requirement = 'maintenance_margin_requirement',
+// 	initial_margin = 'initial_margin',
+// 	maintenance_margin = 'maintenance_margin',
+// 	unrealized_pnl = 'unrealized_pnl',
+// 	unrealized_funding_pnl = 'unrealized_funding_pnl',
+// 	sdk_call_duration_histogram = 'sdk_call_duration_histogram',
+// 	runtime_specs = 'runtime_specs',
+// 	user_map_user_account_keys = 'user_map_user_account_keys',
+// }
 
 /**
  * LiquidatorBot implements a simple liquidation bot for the Drift V2 Protocol. Liquidations work by taking over
@@ -2783,223 +2783,213 @@ export class LiquidatorBot implements Bot {
 	}
 
 	private initializeMetrics() {
-		if (this.metricsInitialized) {
-			logger.error('Tried to initilaize metrics multiple times');
-			return;
-		}
-		this.metricsInitialized = true;
-
-		const { endpoint: defaultEndpoint } = PrometheusExporter.DEFAULT_OPTIONS;
-		this.exporter = new PrometheusExporter(
-			{
-				port: this.metricsPort,
-				endpoint: defaultEndpoint,
-			},
-			() => {
-				logger.info(
-					`prometheus scrape endpoint started: http://localhost:${this.metricsPort}${defaultEndpoint}`
-				);
-			}
-		);
-		const meterName = this.name;
-		const meterProvider = new MeterProvider({
-			views: [
-				new View({
-					instrumentName: METRIC_TYPES.sdk_call_duration_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: meterName,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(20), (_, i) => 0 + i * 100),
-						true
-					),
-				}),
-			],
-		});
-
-		meterProvider.addMetricReader(this.exporter);
-		this.meter = meterProvider.getMeter(meterName);
-
-		this.runtimeSpecsGauge = this.meter.createObservableGauge(
-			METRIC_TYPES.runtime_specs,
-			{
-				description: 'Runtime sepcification of this program',
-			}
-		);
-		this.runtimeSpecsGauge.addCallback((obs) => {
-			obs.observe(1, this.runtimeSpecs);
-		});
-
-		this.totalLeverage = this.meter.createObservableGauge(
-			METRIC_TYPES.total_leverage,
-			{
-				description: 'Total leverage of the account',
-			}
-		);
-		this.totalCollateral = this.meter.createObservableGauge(
-			METRIC_TYPES.total_collateral,
-			{
-				description: 'Total collateral of the account',
-			}
-		);
-		this.freeCollateral = this.meter.createObservableGauge(
-			METRIC_TYPES.free_collateral,
-			{
-				description: 'Free collateral of the account',
-			}
-		);
-		this.perpPositionValue = this.meter.createObservableGauge(
-			METRIC_TYPES.perp_posiiton_value,
-			{
-				description: 'Value of account perp positions',
-			}
-		);
-		this.perpPositionBase = this.meter.createObservableGauge(
-			METRIC_TYPES.perp_posiiton_base,
-			{
-				description: 'Base asset value of account perp positions',
-			}
-		);
-		this.perpPositionQuote = this.meter.createObservableGauge(
-			METRIC_TYPES.perp_posiiton_quote,
-			{
-				description: 'Quote asset value of account perp positions',
-			}
-		);
-		this.initialMarginRequirement = this.meter.createObservableGauge(
-			METRIC_TYPES.initial_margin_requirement,
-			{
-				description: 'The account initial margin requirement',
-			}
-		);
-		this.maintenanceMarginRequirement = this.meter.createObservableGauge(
-			METRIC_TYPES.maintenance_margin_requirement,
-			{
-				description: 'The account maintenance margin requirement',
-			}
-		);
-		this.unrealizedPnL = this.meter.createObservableGauge(
-			METRIC_TYPES.unrealized_pnl,
-			{
-				description: 'The account unrealized PnL',
-			}
-		);
-		this.unrealizedFundingPnL = this.meter.createObservableGauge(
-			METRIC_TYPES.unrealized_funding_pnl,
-			{
-				description: 'The account unrealized funding PnL',
-			}
-		);
-
-		this.sdkCallDurationHistogram = this.meter.createHistogram(
-			METRIC_TYPES.sdk_call_duration_histogram,
-			{
-				description: 'Distribution of sdk method calls',
-				unit: 'ms',
-			}
-		);
-
-		this.userMapUserAccountKeysGauge = this.meter.createObservableGauge(
-			METRIC_TYPES.user_map_user_account_keys,
-			{
-				description: 'number of user account keys in UserMap',
-			}
-		);
-		this.userMapUserAccountKeysGauge.addCallback(async (obs) => {
-			obs.observe(this.userMap!.size());
-		});
-
-		this.meter.addBatchObservableCallback(
-			async (batchObservableResult: BatchObservableResult) => {
-				// each subaccount is responsible for a market
-				// record account specific metrics
-				for (const [idx, user] of this.driftClient.getUsers().entries()) {
-					const accMarketIdx = idx;
-					const userAccount = user.getUserAccount();
-					const oracle =
-						this.driftClient.getOracleDataForPerpMarket(accMarketIdx);
-
-					batchObservableResult.observe(
-						this.totalLeverage!,
-						convertToNumber(user.getLeverage(), TEN_THOUSAND),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-					batchObservableResult.observe(
-						this.totalCollateral!,
-						convertToNumber(user.getTotalCollateral(), QUOTE_PRECISION),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-					batchObservableResult.observe(
-						this.freeCollateral!,
-						convertToNumber(user.getFreeCollateral(), QUOTE_PRECISION),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-					batchObservableResult.observe(
-						this.perpPositionValue!,
-						convertToNumber(
-							user.getPerpPositionValue(accMarketIdx, oracle),
-							QUOTE_PRECISION
-						),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-
-					const perpPosition = user.getPerpPosition(accMarketIdx);
-					batchObservableResult.observe(
-						this.perpPositionBase!,
-						convertToNumber(
-							perpPosition!.baseAssetAmount ?? ZERO,
-							BASE_PRECISION
-						),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-					batchObservableResult.observe(
-						this.perpPositionQuote!,
-						convertToNumber(
-							perpPosition!.quoteAssetAmount ?? ZERO,
-							QUOTE_PRECISION
-						),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-
-					batchObservableResult.observe(
-						this.initialMarginRequirement!,
-						convertToNumber(
-							user.getInitialMarginRequirement(),
-							QUOTE_PRECISION
-						),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-					batchObservableResult.observe(
-						this.maintenanceMarginRequirement!,
-						convertToNumber(
-							user.getMaintenanceMarginRequirement(),
-							QUOTE_PRECISION
-						),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-					batchObservableResult.observe(
-						this.unrealizedPnL!,
-						convertToNumber(user.getUnrealizedPNL(), QUOTE_PRECISION),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-					batchObservableResult.observe(
-						this.unrealizedFundingPnL!,
-						convertToNumber(user.getUnrealizedFundingPNL(), QUOTE_PRECISION),
-						metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
-					);
-				}
-			},
-			[
-				this.totalLeverage,
-				this.totalCollateral,
-				this.freeCollateral,
-				this.perpPositionValue,
-				this.perpPositionBase,
-				this.perpPositionQuote,
-				this.initialMarginRequirement,
-				this.maintenanceMarginRequirement,
-				this.unrealizedPnL,
-				this.unrealizedFundingPnL,
-			]
-		);
+		// if (this.metricsInitialized) {
+		// 	logger.error('Tried to initilaize metrics multiple times');
+		// 	return;
+		// }
+		// this.metricsInitialized = true;
+		// const { endpoint: defaultEndpoint } = PrometheusExporter.DEFAULT_OPTIONS;
+		// this.exporter = new PrometheusExporter(
+		// 	{
+		// 		port: this.metricsPort,
+		// 		endpoint: defaultEndpoint,
+		// 	},
+		// 	() => {
+		// 		logger.info(
+		// 			`prometheus scrape endpoint started: http://localhost:${this.metricsPort}${defaultEndpoint}`
+		// 		);
+		// 	}
+		// );
+		// const meterName = this.name;
+		// const meterProvider = new MeterProvider({
+		// 	views: [
+		// 		new View({
+		// 			instrumentName: METRIC_TYPES.sdk_call_duration_histogram,
+		// 			instrumentType: InstrumentType.HISTOGRAM,
+		// 			meterName: meterName,
+		// 			aggregation: new ExplicitBucketHistogramAggregation(
+		// 				Array.from(new Array(20), (_, i) => 0 + i * 100),
+		// 				true
+		// 			),
+		// 		}),
+		// 	],
+		// });
+		// meterProvider.addMetricReader(this.exporter);
+		// this.meter = meterProvider.getMeter(meterName);
+		// this.runtimeSpecsGauge = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.runtime_specs,
+		// 	{
+		// 		description: 'Runtime sepcification of this program',
+		// 	}
+		// );
+		// this.runtimeSpecsGauge.addCallback((obs) => {
+		// 	obs.observe(1, this.runtimeSpecs);
+		// });
+		// this.totalLeverage = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.total_leverage,
+		// 	{
+		// 		description: 'Total leverage of the account',
+		// 	}
+		// );
+		// this.totalCollateral = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.total_collateral,
+		// 	{
+		// 		description: 'Total collateral of the account',
+		// 	}
+		// );
+		// this.freeCollateral = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.free_collateral,
+		// 	{
+		// 		description: 'Free collateral of the account',
+		// 	}
+		// );
+		// this.perpPositionValue = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.perp_posiiton_value,
+		// 	{
+		// 		description: 'Value of account perp positions',
+		// 	}
+		// );
+		// this.perpPositionBase = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.perp_posiiton_base,
+		// 	{
+		// 		description: 'Base asset value of account perp positions',
+		// 	}
+		// );
+		// this.perpPositionQuote = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.perp_posiiton_quote,
+		// 	{
+		// 		description: 'Quote asset value of account perp positions',
+		// 	}
+		// );
+		// this.initialMarginRequirement = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.initial_margin_requirement,
+		// 	{
+		// 		description: 'The account initial margin requirement',
+		// 	}
+		// );
+		// this.maintenanceMarginRequirement = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.maintenance_margin_requirement,
+		// 	{
+		// 		description: 'The account maintenance margin requirement',
+		// 	}
+		// );
+		// this.unrealizedPnL = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.unrealized_pnl,
+		// 	{
+		// 		description: 'The account unrealized PnL',
+		// 	}
+		// );
+		// this.unrealizedFundingPnL = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.unrealized_funding_pnl,
+		// 	{
+		// 		description: 'The account unrealized funding PnL',
+		// 	}
+		// );
+		// this.sdkCallDurationHistogram = this.meter.createHistogram(
+		// 	METRIC_TYPES.sdk_call_duration_histogram,
+		// 	{
+		// 		description: 'Distribution of sdk method calls',
+		// 		unit: 'ms',
+		// 	}
+		// );
+		// this.userMapUserAccountKeysGauge = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.user_map_user_account_keys,
+		// 	{
+		// 		description: 'number of user account keys in UserMap',
+		// 	}
+		// );
+		// this.userMapUserAccountKeysGauge.addCallback(async (obs) => {
+		// 	obs.observe(this.userMap!.size());
+		// });
+		// this.meter.addBatchObservableCallback(
+		// 	async (batchObservableResult: BatchObservableResult) => {
+		// 		// each subaccount is responsible for a market
+		// 		// record account specific metrics
+		// 		for (const [idx, user] of this.driftClient.getUsers().entries()) {
+		// 			const accMarketIdx = idx;
+		// 			const userAccount = user.getUserAccount();
+		// 			const oracle =
+		// 				this.driftClient.getOracleDataForPerpMarket(accMarketIdx);
+		// 			batchObservableResult.observe(
+		// 				this.totalLeverage!,
+		// 				convertToNumber(user.getLeverage(), TEN_THOUSAND),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.totalCollateral!,
+		// 				convertToNumber(user.getTotalCollateral(), QUOTE_PRECISION),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.freeCollateral!,
+		// 				convertToNumber(user.getFreeCollateral(), QUOTE_PRECISION),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.perpPositionValue!,
+		// 				convertToNumber(
+		// 					user.getPerpPositionValue(accMarketIdx, oracle),
+		// 					QUOTE_PRECISION
+		// 				),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			const perpPosition = user.getPerpPosition(accMarketIdx);
+		// 			batchObservableResult.observe(
+		// 				this.perpPositionBase!,
+		// 				convertToNumber(
+		// 					perpPosition!.baseAssetAmount ?? ZERO,
+		// 					BASE_PRECISION
+		// 				),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.perpPositionQuote!,
+		// 				convertToNumber(
+		// 					perpPosition!.quoteAssetAmount ?? ZERO,
+		// 					QUOTE_PRECISION
+		// 				),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.initialMarginRequirement!,
+		// 				convertToNumber(
+		// 					user.getInitialMarginRequirement(),
+		// 					QUOTE_PRECISION
+		// 				),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.maintenanceMarginRequirement!,
+		// 				convertToNumber(
+		// 					user.getMaintenanceMarginRequirement(),
+		// 					QUOTE_PRECISION
+		// 				),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.unrealizedPnL!,
+		// 				convertToNumber(user.getUnrealizedPNL(), QUOTE_PRECISION),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 			batchObservableResult.observe(
+		// 				this.unrealizedFundingPnL!,
+		// 				convertToNumber(user.getUnrealizedFundingPNL(), QUOTE_PRECISION),
+		// 				metricAttrFromUserAccount(user.userAccountPublicKey, userAccount)
+		// 			);
+		// 		}
+		// 	},
+		// 	[
+		// 		this.totalLeverage,
+		// 		this.totalCollateral,
+		// 		this.freeCollateral,
+		// 		this.perpPositionValue,
+		// 		this.perpPositionBase,
+		// 		this.perpPositionQuote,
+		// 		this.initialMarginRequirement,
+		// 		this.maintenanceMarginRequirement,
+		// 		this.unrealizedPnL,
+		// 		this.unrealizedFundingPnL,
+		// 	]
+		// );
 	}
 }

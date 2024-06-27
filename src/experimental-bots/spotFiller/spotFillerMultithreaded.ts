@@ -63,11 +63,11 @@ import {
 	swapFillerHardEarnedUSDCForSOL,
 	validMinimumGasAmount,
 } from '../../utils';
-import {
-	ExplicitBucketHistogramAggregation,
-	InstrumentType,
-	View,
-} from '@opentelemetry/sdk-metrics-base';
+// import {
+// 	ExplicitBucketHistogramAggregation,
+// 	InstrumentType,
+// 	View,
+// } from '@opentelemetry/sdk-metrics-base';
 import { ChildProcess } from 'child_process';
 import {
 	deserializeNodeToFill,
@@ -100,27 +100,27 @@ import { getErrorCode } from '../../error';
 import { webhookMessage } from '../../webhook';
 import { selectMakers } from '../../makerSelection';
 
-enum METRIC_TYPES {
-	try_fill_duration_histogram = 'try_fill_duration_histogram',
-	runtime_specs = 'runtime_specs',
-	last_try_fill_time = 'last_try_fill_time',
-	mutex_busy = 'mutex_busy',
-	sent_transactions = 'sent_transactions',
-	landed_transactions = 'landed_transactions',
-	tx_sim_error_count = 'tx_sim_error_count',
-	pending_tx_sigs_to_confirm = 'pending_tx_sigs_to_confirm',
-	pending_tx_sigs_loop_rate_limited = 'pending_tx_sigs_loop_rate_limited',
-	evicted_pending_tx_sigs_to_confirm = 'evicted_pending_tx_sigs_to_confirm',
-	estimated_tx_cu_histogram = 'estimated_tx_cu_histogram',
-	simulate_tx_duration_histogram = 'simulate_tx_duration_histogram',
-	expired_nodes_set_size = 'expired_nodes_set_size',
+// enum METRIC_TYPES {
+// 	try_fill_duration_histogram = 'try_fill_duration_histogram',
+// 	runtime_specs = 'runtime_specs',
+// 	last_try_fill_time = 'last_try_fill_time',
+// 	mutex_busy = 'mutex_busy',
+// 	sent_transactions = 'sent_transactions',
+// 	landed_transactions = 'landed_transactions',
+// 	tx_sim_error_count = 'tx_sim_error_count',
+// 	pending_tx_sigs_to_confirm = 'pending_tx_sigs_to_confirm',
+// 	pending_tx_sigs_loop_rate_limited = 'pending_tx_sigs_loop_rate_limited',
+// 	evicted_pending_tx_sigs_to_confirm = 'evicted_pending_tx_sigs_to_confirm',
+// 	estimated_tx_cu_histogram = 'estimated_tx_cu_histogram',
+// 	simulate_tx_duration_histogram = 'simulate_tx_duration_histogram',
+// 	expired_nodes_set_size = 'expired_nodes_set_size',
 
-	jito_bundles_accepted = 'jito_bundles_accepted',
-	jito_bundles_simulation_failure = 'jito_simulation_failure',
-	jito_dropped_bundle = 'jito_dropped_bundle',
-	jito_landed_tips = 'jito_landed_tips',
-	jito_bundle_count = 'jito_bundle_count',
-}
+// 	jito_bundles_accepted = 'jito_bundles_accepted',
+// 	jito_bundles_simulation_failure = 'jito_simulation_failure',
+// 	jito_dropped_bundle = 'jito_dropped_bundle',
+// 	jito_landed_tips = 'jito_landed_tips',
+// 	jito_bundle_count = 'jito_bundle_count',
+// }
 
 const errorCodesToSuppress = [
 	6061, // 0x17AD Error Number: 6061. Error Message: Order does not exist.
@@ -288,7 +288,7 @@ export class SpotFillerMultithreaded {
 		}
 		this.runtimeSpec = runtimeSpec;
 
-		this.initializeMetrics(config.metricsPort ?? this.globalConfig.metricsPort);
+		//this.initializeMetrics(config.metricsPort ?? this.globalConfig.metricsPort);
 
 		const spotMarkets = this.marketIndexesFlattened.map((m) => {
 			return {
@@ -1417,130 +1417,125 @@ export class SpotFillerMultithreaded {
 		this.triggeringNodes.delete(getNodeToTriggerSignature(node));
 	}
 
-	protected initializeMetrics(metricsPort?: number) {
-		if (this.globalConfig.disableMetrics) {
-			logger.info(
-				`${this.name}: globalConfig.disableMetrics is true, not initializing metrics`
-			);
-			return;
-		}
-
-		if (!metricsPort) {
-			logger.info(
-				`${this.name}: bot.metricsPort and global.metricsPort not set, not initializing metrics`
-			);
-			return;
-		}
-
-		if (this.metricsInitialized) {
-			logger.error('Tried to initilaize metrics multiple times');
-			return;
-		}
-
-		this.metrics = new Metrics(
-			this.name,
-			[
-				new View({
-					instrumentName: METRIC_TYPES.try_fill_duration_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: this.name,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(20), (_, i) => 0 + i * 5),
-						true
-					),
-				}),
-				new View({
-					instrumentName: METRIC_TYPES.estimated_tx_cu_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: this.name,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(15), (_, i) => 0 + i * 100_000),
-						true
-					),
-				}),
-				new View({
-					instrumentName: METRIC_TYPES.simulate_tx_duration_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: this.name,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(20), (_, i) => 50 + i * 50),
-						true
-					),
-				}),
-			],
-			metricsPort!
-		);
-		this.bootTimeMs = Date.now();
-		this.runtimeSpecsGauge = this.metrics.addGauge(
-			METRIC_TYPES.runtime_specs,
-			'Runtime sepcification of this program'
-		);
-		this.estTxCuHistogram = this.metrics.addHistogram(
-			METRIC_TYPES.estimated_tx_cu_histogram,
-			'Histogram of the estimated fill cu used'
-		);
-		this.simulateTxHistogram = this.metrics.addHistogram(
-			METRIC_TYPES.simulate_tx_duration_histogram,
-			'Histogram of the duration of simulateTransaction RPC calls'
-		);
-		this.lastTryFillTimeGauge = this.metrics.addGauge(
-			METRIC_TYPES.last_try_fill_time,
-			'Last time that fill was attempted'
-		);
-		this.landedTxsCounter = this.metrics.addCounter(
-			METRIC_TYPES.landed_transactions,
-			'Count of fills that we successfully landed'
-		);
-		this.sentTxsCounter = this.metrics.addCounter(
-			METRIC_TYPES.sent_transactions,
-			'Count of transactions we sent out'
-		);
-		this.txSimErrorCounter = this.metrics.addCounter(
-			METRIC_TYPES.tx_sim_error_count,
-			'Count of errors from simulating transactions'
-		);
-		this.pendingTxSigsToConfirmGauge = this.metrics.addGauge(
-			METRIC_TYPES.pending_tx_sigs_to_confirm,
-			'Count of tx sigs that are pending confirmation'
-		);
-		this.pendingTxSigsLoopRateLimitedCounter = this.metrics.addCounter(
-			METRIC_TYPES.pending_tx_sigs_loop_rate_limited,
-			'Count of times the pending tx sigs loop was rate limited'
-		);
-		this.evictedPendingTxSigsToConfirmCounter = this.metrics.addCounter(
-			METRIC_TYPES.evicted_pending_tx_sigs_to_confirm,
-			'Count of tx sigs that were evicted from the pending tx sigs to confirm cache'
-		);
-		this.expiredNodesSetSize = this.metrics.addGauge(
-			METRIC_TYPES.expired_nodes_set_size,
-			'Count of nodes that are expired'
-		);
-		this.jitoBundlesAcceptedGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_bundles_accepted,
-			'Count of jito bundles that were accepted'
-		);
-		this.jitoBundlesSimulationFailureGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_bundles_simulation_failure,
-			'Count of jito bundles that failed simulation'
-		);
-		this.jitoDroppedBundleGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_dropped_bundle,
-			'Count of jito bundles that were dropped'
-		);
-		this.jitoLandedTipsGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_landed_tips,
-			'Gauge of historic bundle tips that landed'
-		);
-		this.jitoBundleCount = this.metrics.addGauge(
-			METRIC_TYPES.jito_bundle_count,
-			'Count of jito bundles that were sent, and their status'
-		);
-
-		this.metrics?.finalizeObservables();
-
-		this.runtimeSpecsGauge.setLatestValue(this.bootTimeMs, this.runtimeSpec);
-		this.metricsInitialized = true;
-	}
+	//protected initializeMetrics(metricsPort?: number) {
+	// if (this.globalConfig.disableMetrics) {
+	// 	logger.info(
+	// 		`${this.name}: globalConfig.disableMetrics is true, not initializing metrics`
+	// 	);
+	// 	return;
+	// }
+	// if (!metricsPort) {
+	// 	logger.info(
+	// 		`${this.name}: bot.metricsPort and global.metricsPort not set, not initializing metrics`
+	// 	);
+	// 	return;
+	// }
+	// if (this.metricsInitialized) {
+	// 	logger.error('Tried to initilaize metrics multiple times');
+	// 	return;
+	// }
+	// this.metrics = new Metrics(
+	// 	this.name,
+	// 	[
+	// 		new View({
+	// 			instrumentName: METRIC_TYPES.try_fill_duration_histogram,
+	// 			instrumentType: InstrumentType.HISTOGRAM,
+	// 			meterName: this.name,
+	// 			aggregation: new ExplicitBucketHistogramAggregation(
+	// 				Array.from(new Array(20), (_, i) => 0 + i * 5),
+	// 				true
+	// 			),
+	// 		}),
+	// 		new View({
+	// 			instrumentName: METRIC_TYPES.estimated_tx_cu_histogram,
+	// 			instrumentType: InstrumentType.HISTOGRAM,
+	// 			meterName: this.name,
+	// 			aggregation: new ExplicitBucketHistogramAggregation(
+	// 				Array.from(new Array(15), (_, i) => 0 + i * 100_000),
+	// 				true
+	// 			),
+	// 		}),
+	// 		new View({
+	// 			instrumentName: METRIC_TYPES.simulate_tx_duration_histogram,
+	// 			instrumentType: InstrumentType.HISTOGRAM,
+	// 			meterName: this.name,
+	// 			aggregation: new ExplicitBucketHistogramAggregation(
+	// 				Array.from(new Array(20), (_, i) => 50 + i * 50),
+	// 				true
+	// 			),
+	// 		}),
+	// 	],
+	// 	metricsPort!
+	// );
+	// this.bootTimeMs = Date.now();
+	// this.runtimeSpecsGauge = this.metrics.addGauge(
+	// 	METRIC_TYPES.runtime_specs,
+	// 	'Runtime sepcification of this program'
+	// );
+	// this.estTxCuHistogram = this.metrics.addHistogram(
+	// 	METRIC_TYPES.estimated_tx_cu_histogram,
+	// 	'Histogram of the estimated fill cu used'
+	// );
+	// this.simulateTxHistogram = this.metrics.addHistogram(
+	// 	METRIC_TYPES.simulate_tx_duration_histogram,
+	// 	'Histogram of the duration of simulateTransaction RPC calls'
+	// );
+	// this.lastTryFillTimeGauge = this.metrics.addGauge(
+	// 	METRIC_TYPES.last_try_fill_time,
+	// 	'Last time that fill was attempted'
+	// );
+	// this.landedTxsCounter = this.metrics.addCounter(
+	// 	METRIC_TYPES.landed_transactions,
+	// 	'Count of fills that we successfully landed'
+	// );
+	// this.sentTxsCounter = this.metrics.addCounter(
+	// 	METRIC_TYPES.sent_transactions,
+	// 	'Count of transactions we sent out'
+	// );
+	// this.txSimErrorCounter = this.metrics.addCounter(
+	// 	METRIC_TYPES.tx_sim_error_count,
+	// 	'Count of errors from simulating transactions'
+	// );
+	// this.pendingTxSigsToConfirmGauge = this.metrics.addGauge(
+	// 	METRIC_TYPES.pending_tx_sigs_to_confirm,
+	// 	'Count of tx sigs that are pending confirmation'
+	// );
+	// this.pendingTxSigsLoopRateLimitedCounter = this.metrics.addCounter(
+	// 	METRIC_TYPES.pending_tx_sigs_loop_rate_limited,
+	// 	'Count of times the pending tx sigs loop was rate limited'
+	// );
+	// this.evictedPendingTxSigsToConfirmCounter = this.metrics.addCounter(
+	// 	METRIC_TYPES.evicted_pending_tx_sigs_to_confirm,
+	// 	'Count of tx sigs that were evicted from the pending tx sigs to confirm cache'
+	// );
+	// this.expiredNodesSetSize = this.metrics.addGauge(
+	// 	METRIC_TYPES.expired_nodes_set_size,
+	// 	'Count of nodes that are expired'
+	// );
+	// this.jitoBundlesAcceptedGauge = this.metrics.addGauge(
+	// 	METRIC_TYPES.jito_bundles_accepted,
+	// 	'Count of jito bundles that were accepted'
+	// );
+	// this.jitoBundlesSimulationFailureGauge = this.metrics.addGauge(
+	// 	METRIC_TYPES.jito_bundles_simulation_failure,
+	// 	'Count of jito bundles that failed simulation'
+	// );
+	// this.jitoDroppedBundleGauge = this.metrics.addGauge(
+	// 	METRIC_TYPES.jito_dropped_bundle,
+	// 	'Count of jito bundles that were dropped'
+	// );
+	// this.jitoLandedTipsGauge = this.metrics.addGauge(
+	// 	METRIC_TYPES.jito_landed_tips,
+	// 	'Gauge of historic bundle tips that landed'
+	// );
+	// this.jitoBundleCount = this.metrics.addGauge(
+	// 	METRIC_TYPES.jito_bundle_count,
+	// 	'Count of jito bundles that were sent, and their status'
+	// );
+	// this.metrics?.finalizeObservables();
+	// this.runtimeSpecsGauge.setLatestValue(this.bootTimeMs, this.runtimeSpec);
+	// this.metricsInitialized = true;
+	//}
 
 	protected recordEvictedTxSig(
 		_tsTxSigAdded: { ts: number; nodeFilled: NodeToFillWithBuffer },

@@ -20,12 +20,12 @@ import { webhookMessage } from '../webhook';
 import { BaseBotConfig } from '../config';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import { Counter, Histogram, Meter, ObservableGauge } from '@opentelemetry/api';
-import {
-	ExplicitBucketHistogramAggregation,
-	InstrumentType,
-	MeterProvider,
-	View,
-} from '@opentelemetry/sdk-metrics-base';
+// import {
+// 	ExplicitBucketHistogramAggregation,
+// 	InstrumentType,
+// 	MeterProvider,
+// 	View,
+// } from '@opentelemetry/sdk-metrics-base';
 import { RuntimeSpec, metricAttrFromUserAccount } from '../metrics';
 import { getNodeToTriggerSignature } from '../utils';
 
@@ -36,13 +36,13 @@ const errorCodesToSuppress = [
 	6112, // Error Message: OrderDidNotSatisfyTriggerCondition.
 ];
 
-enum METRIC_TYPES {
-	sdk_call_duration_histogram = 'sdk_call_duration_histogram',
-	try_trigger_duration_histogram = 'try_trigger_duration_histogram',
-	runtime_specs = 'runtime_specs',
-	mutex_busy = 'mutex_busy',
-	errors = 'errors',
-}
+// enum METRIC_TYPES {
+// 	sdk_call_duration_histogram = 'sdk_call_duration_histogram',
+// 	try_trigger_duration_histogram = 'try_trigger_duration_histogram',
+// 	runtime_specs = 'runtime_specs',
+// 	mutex_busy = 'mutex_busy',
+// 	errors = 'errors',
+// }
 
 export class TriggerBot implements Bot {
 	public readonly name: string;
@@ -96,66 +96,62 @@ export class TriggerBot implements Bot {
 	}
 
 	private initializeMetrics() {
-		if (this.metricsInitialized) {
-			logger.error('Tried to initilaize metrics multiple times');
-			return;
-		}
-		this.metricsInitialized = true;
-
-		const { endpoint: defaultEndpoint } = PrometheusExporter.DEFAULT_OPTIONS;
-		this.exporter = new PrometheusExporter(
-			{
-				port: this.metricsPort,
-				endpoint: defaultEndpoint,
-			},
-			() => {
-				logger.info(
-					`prometheus scrape endpoint started: http://localhost:${this.metricsPort}${defaultEndpoint}`
-				);
-			}
-		);
-		const meterName = this.name;
-		const meterProvider = new MeterProvider({
-			views: [
-				new View({
-					instrumentName: METRIC_TYPES.try_trigger_duration_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: meterName,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(20), (_, i) => 0 + i * 5),
-						true
-					),
-				}),
-			],
-		});
-
-		meterProvider.addMetricReader(this.exporter);
-		this.meter = meterProvider.getMeter(meterName);
-
-		this.bootTimeMs = Date.now();
-
-		this.runtimeSpecsGauge = this.meter.createObservableGauge(
-			METRIC_TYPES.runtime_specs,
-			{
-				description: 'Runtime sepcification of this program',
-			}
-		);
-		this.runtimeSpecsGauge.addCallback((obs) => {
-			obs.observe(this.bootTimeMs, this.runtimeSpec);
-		});
-		this.mutexBusyCounter = this.meter.createCounter(METRIC_TYPES.mutex_busy, {
-			description: 'Count of times the mutex was busy',
-		});
-		this.errorCounter = this.meter.createCounter(METRIC_TYPES.errors, {
-			description: 'Count of errors',
-		});
-		this.tryTriggerDurationHistogram = this.meter.createHistogram(
-			METRIC_TYPES.try_trigger_duration_histogram,
-			{
-				description: 'Distribution of tryTrigger',
-				unit: 'ms',
-			}
-		);
+		// if (this.metricsInitialized) {
+		// 	logger.error('Tried to initilaize metrics multiple times');
+		// 	return;
+		// }
+		// this.metricsInitialized = true;
+		// const { endpoint: defaultEndpoint } = PrometheusExporter.DEFAULT_OPTIONS;
+		// this.exporter = new PrometheusExporter(
+		// 	{
+		// 		port: this.metricsPort,
+		// 		endpoint: defaultEndpoint,
+		// 	},
+		// 	() => {
+		// 		logger.info(
+		// 			`prometheus scrape endpoint started: http://localhost:${this.metricsPort}${defaultEndpoint}`
+		// 		);
+		// 	}
+		// );
+		// const meterName = this.name;
+		// const meterProvider = new MeterProvider({
+		// 	views: [
+		// 		new View({
+		// 			instrumentName: METRIC_TYPES.try_trigger_duration_histogram,
+		// 			instrumentType: InstrumentType.HISTOGRAM,
+		// 			meterName: meterName,
+		// 			aggregation: new ExplicitBucketHistogramAggregation(
+		// 				Array.from(new Array(20), (_, i) => 0 + i * 5),
+		// 				true
+		// 			),
+		// 		}),
+		// 	],
+		// });
+		// meterProvider.addMetricReader(this.exporter);
+		// this.meter = meterProvider.getMeter(meterName);
+		// this.bootTimeMs = Date.now();
+		// this.runtimeSpecsGauge = this.meter.createObservableGauge(
+		// 	METRIC_TYPES.runtime_specs,
+		// 	{
+		// 		description: 'Runtime sepcification of this program',
+		// 	}
+		// );
+		// this.runtimeSpecsGauge.addCallback((obs) => {
+		// 	obs.observe(this.bootTimeMs, this.runtimeSpec);
+		// });
+		// this.mutexBusyCounter = this.meter.createCounter(METRIC_TYPES.mutex_busy, {
+		// 	description: 'Count of times the mutex was busy',
+		// });
+		// this.errorCounter = this.meter.createCounter(METRIC_TYPES.errors, {
+		// 	description: 'Count of errors',
+		// });
+		// this.tryTriggerDurationHistogram = this.meter.createHistogram(
+		// 	METRIC_TYPES.try_trigger_duration_histogram,
+		// 	{
+		// 		description: 'Distribution of tryTrigger',
+		// 		unit: 'ms',
+		// 	}
+		// );
 	}
 
 	public async init() {

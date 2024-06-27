@@ -1,15 +1,16 @@
-import { Meter } from '@opentelemetry/api-metrics';
+//import { Meter } from '@opentelemetry/api-metrics';
 import {
 	ExplicitBucketHistogramAggregation,
-	MeterProvider,
-	View,
+	//MeterProvider,
+	//MetricReader,
+	//View,
 } from '@opentelemetry/sdk-metrics-base';
-import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
-import { logger } from './logger';
+//import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
+//import { logger } from './logger';
 import { PublicKey } from '@solana/web3.js';
 import { UserAccount } from '@drift-labs/sdk';
 import {
-	BatchObservableResult,
+	//BatchObservableResult,
 	Attributes,
 	ObservableGauge,
 	Histogram,
@@ -107,103 +108,107 @@ export class CounterValue {
 }
 
 export class Metrics {
-	private exporter: PrometheusExporter;
-	private meterProvider: MeterProvider;
-	private meters: Map<string, Meter>;
-	private gauges: Array<GaugeValue>;
-	private defaultMeterName: string;
-
-	constructor(meterName: string, views?: Array<View>, metricsPort?: number) {
-		const { endpoint: defaultEndpoint, port: defaultPort } =
-			PrometheusExporter.DEFAULT_OPTIONS;
-		const port = metricsPort || defaultPort;
-		this.exporter = new PrometheusExporter(
-			{
-				port: port,
-				endpoint: defaultEndpoint,
-			},
-			() => {
-				logger.info(
-					`prometheus scrape endpoint started: http://localhost:${port}${defaultEndpoint}`
-				);
-			}
-		);
-
-		this.meterProvider = new MeterProvider({ views });
-		this.meterProvider.addMetricReader(this.exporter);
-		this.gauges = new Array<GaugeValue>();
-		this.meters = new Map<string, Meter>();
-		this.defaultMeterName = meterName;
-		this.getMeter(this.defaultMeterName);
-	}
-
-	getMeter(name: string): Meter {
-		if (this.meters.has(name)) {
-			return this.meters.get(name) as Meter;
-		} else {
-			const meter = this.meterProvider.getMeter(name);
-			this.meters.set(name, meter);
-			return meter;
-		}
-	}
-
-	addGauge(
-		metricName: string,
-		description: string,
-		meterName?: string
-	): GaugeValue {
-		const meter = this.getMeter(meterName ?? this.defaultMeterName);
-		const newGauge = meter.createObservableGauge(metricName, {
-			description: description,
-		});
-		const gauge = new GaugeValue(newGauge);
-		this.gauges.push(gauge);
-		return gauge;
-	}
-
-	addHistogram(
-		metricName: string,
-		description: string,
-		meterName?: string
-	): HistogramValue {
-		const meter = this.getMeter(meterName ?? this.defaultMeterName);
-		return new HistogramValue(
-			meter.createHistogram(metricName, {
-				description: description,
-			})
-		);
-	}
-
-	addCounter(
-		metricName: string,
-		description: string,
-		meterName?: string
-	): CounterValue {
-		const meter = this.getMeter(meterName ?? this.defaultMeterName);
-		return new CounterValue(
-			meter.createCounter(metricName, {
-				description: description,
-			})
-		);
-	}
-
-	/**
-	 * Finalizes the observables by adding the batch observable callback to each meter.
-	 * Must call this before using this Metrics object
-	 */
-	finalizeObservables() {
-		for (const meter of this.meters.values()) {
-			meter.addBatchObservableCallback(
-				(observerResult: BatchObservableResult) => {
-					for (const gauge of this.gauges) {
-						for (const [attributesStr, value] of gauge.entries()) {
-							const attributes = JSON.parse(attributesStr);
-							observerResult.observe(gauge.getGauge(), value, attributes);
-						}
-					}
-				},
-				this.gauges.map((gauge) => gauge.getGauge())
-			);
-		}
-	}
+	// private exporter: PrometheusExporter;
+	// private meterProvider: MeterProvider;
+	// private meters: Map<string, Meter>;
+	// private gauges: Array<GaugeValue>;
+	// private defaultMeterName: string;
+	// constructor(meterName: string, views?: Array<View>, metricsPort?: number) {
+	//     const { endpoint: defaultEndpoint, port: defaultPort } = PrometheusExporter.DEFAULT_OPTIONS;
+	//     const port = metricsPort || defaultPort;
+	//     this.exporter = new PrometheusExporter({
+	//         port: port,
+	//         endpoint: defaultEndpoint,
+	//     });
+	//     // Implement MetricReader interface
+	//     class CustomMetricReader implements MetricReader {
+	//         async shutdown(): Promise<void> {
+	//             await this.exporter.shutdown();
+	//         }
+	//         _shutdown(): Promise<void> {
+	//             throw new Error('Method not implemented.');
+	//         }
+	//         setMetricProducer(producer: unknown): void {
+	//             throw new Error('Method not implemented.');
+	//         }
+	//         selectAggregationTemporality(temporality: unknown): void {
+	//             throw new Error('Method not implemented.');
+	//         }
+	//         onInitialized(): void {
+	//             throw new Error('Method not implemented.');
+	//         }
+	//     }
+	//     const metricReader = new CustomMetricReader();
+	//     this.meterProvider = new MeterProvider({ views }, metricReader);
+	//     this.gauges = new Array<GaugeValue>();
+	//     this.meters = new Map<string, Meter>();
+	//     this.defaultMeterName = meterName;
+	//     // No need to call start() for PrometheusExporter, it starts automatically
+	//     this.getMeter(this.defaultMeterName);
+	// }
+	// getMeter(name: string): Meter {
+	//     if (this.meters.has(name)) {
+	//         return this.meters.get(name) as Meter;
+	//     } else {
+	//         const meter = this.meterProvider.getMeter(name);
+	//         this.meters.set(name, meter);
+	//         return meter;
+	//     }
+	// }
+	// addGauge(
+	// 	metricName: string,
+	// 	description: string,
+	// 	meterName?: string
+	// ): GaugeValue {
+	// 	const meter = this.getMeter(meterName ?? this.defaultMeterName);
+	// 	const newGauge = meter.createObservableGauge(metricName, {
+	// 		description: description,
+	// 	});
+	// 	const gauge = new GaugeValue(newGauge);
+	// 	this.gauges.push(gauge);
+	// 	return gauge;
+	// }
+	// addHistogram(
+	// 	metricName: string,
+	// 	description: string,
+	// 	meterName?: string
+	// ): HistogramValue {
+	// 	const meter = this.getMeter(meterName ?? this.defaultMeterName);
+	// 	return new HistogramValue(
+	// 		meter.createHistogram(metricName, {
+	// 			description: description,
+	// 		})
+	// 	);
+	// }
+	// addCounter(
+	// 	metricName: string,
+	// 	description: string,
+	// 	meterName?: string
+	// ): CounterValue {
+	// 	const meter = this.getMeter(meterName ?? this.defaultMeterName);
+	// 	return new CounterValue(
+	// 		meter.createCounter(metricName, {
+	// 			description: description,
+	// 		})
+	// 	);
+	// }
+	// /**
+	//  * Finalizes the observables by adding the batch observable callback to each meter.
+	//  * Must call this before using this Metrics object
+	//  */
+	// finalizeObservables() {
+	// 	for (const meter of this.meters.values()) {
+	// 		meter.addBatchObservableCallback(
+	// 			(observerResult: BatchObservableResult) => {
+	// 				for (const gauge of this.gauges) {
+	// 					for (const [attributesStr, value] of gauge.entries()) {
+	// 						const attributes = JSON.parse(attributesStr);
+	// 						observerResult.observe(gauge.getGauge(), value, attributes);
+	// 					}
+	// 				}
+	// 			},
+	// 			this.gauges.map((gauge) => gauge.getGauge())
+	// 		);
+	// 	}
+	// }
 }

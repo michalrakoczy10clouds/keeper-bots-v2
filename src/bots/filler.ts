@@ -47,11 +47,11 @@ import {
 	LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
 
-import {
-	ExplicitBucketHistogramAggregation,
-	InstrumentType,
-	View,
-} from '@opentelemetry/sdk-metrics-base';
+// import {
+// 	ExplicitBucketHistogramAggregation,
+// 	InstrumentType,
+// 	View,
+// } from '@opentelemetry/sdk-metrics-base';
 
 import { logger } from '../logger';
 import { Bot } from '../types';
@@ -136,29 +136,29 @@ const errorCodesToSuppress = [
 	6252, // Error Message: ImpossibleFill, expired order not ready.
 ];
 
-enum METRIC_TYPES {
-	try_fill_duration_histogram = 'try_fill_duration_histogram',
-	runtime_specs = 'runtime_specs',
-	last_try_fill_time = 'last_try_fill_time',
-	mutex_busy = 'mutex_busy',
-	sent_transactions = 'sent_transactions',
-	landed_transactions = 'landed_transactions',
-	tx_sim_error_count = 'tx_sim_error_count',
-	pending_tx_sigs_to_confirm = 'pending_tx_sigs_to_confirm',
-	pending_tx_sigs_loop_rate_limited = 'pending_tx_sigs_loop_rate_limited',
-	evicted_pending_tx_sigs_to_confirm = 'evicted_pending_tx_sigs_to_confirm',
-	estimated_tx_cu_histogram = 'estimated_tx_cu_histogram',
-	simulate_tx_duration_histogram = 'simulate_tx_duration_histogram',
-	expired_nodes_set_size = 'expired_nodes_set_size',
+// enum METRIC_TYPES {
+// 	try_fill_duration_histogram = 'try_fill_duration_histogram',
+// 	runtime_specs = 'runtime_specs',
+// 	last_try_fill_time = 'last_try_fill_time',
+// 	mutex_busy = 'mutex_busy',
+// 	sent_transactions = 'sent_transactions',
+// 	landed_transactions = 'landed_transactions',
+// 	tx_sim_error_count = 'tx_sim_error_count',
+// 	pending_tx_sigs_to_confirm = 'pending_tx_sigs_to_confirm',
+// 	pending_tx_sigs_loop_rate_limited = 'pending_tx_sigs_loop_rate_limited',
+// 	evicted_pending_tx_sigs_to_confirm = 'evicted_pending_tx_sigs_to_confirm',
+// 	estimated_tx_cu_histogram = 'estimated_tx_cu_histogram',
+// 	simulate_tx_duration_histogram = 'simulate_tx_duration_histogram',
+// 	expired_nodes_set_size = 'expired_nodes_set_size',
 
-	jito_bundles_accepted = 'jito_bundles_accepted',
-	jito_bundles_simulation_failure = 'jito_simulation_failure',
-	jito_dropped_bundle = 'jito_dropped_bundle',
-	jito_landed_tips = 'jito_landed_tips',
-	jito_bundle_count = 'jito_bundle_count',
-	clock_subscriber_ts = 'clock_subscriber_ts',
-	wall_clock_ts = 'wall_clock_ts',
-}
+// 	jito_bundles_accepted = 'jito_bundles_accepted',
+// 	jito_bundles_simulation_failure = 'jito_simulation_failure',
+// 	jito_dropped_bundle = 'jito_dropped_bundle',
+// 	jito_landed_tips = 'jito_landed_tips',
+// 	jito_bundle_count = 'jito_bundle_count',
+// 	clock_subscriber_ts = 'clock_subscriber_ts',
+// 	wall_clock_ts = 'wall_clock_ts',
+// }
 
 export type MakerNodeMap = Map<string, DLOBNode[]>;
 export type TxType = 'fill' | 'trigger' | 'settlePnl';
@@ -430,124 +430,124 @@ export class FillerBot implements Bot {
 			return;
 		}
 
-		this.metrics = new Metrics(
-			this.name,
-			[
-				new View({
-					instrumentName: METRIC_TYPES.try_fill_duration_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: this.name,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(20), (_, i) => 0 + i * 5),
-						true
-					),
-				}),
-				new View({
-					instrumentName: METRIC_TYPES.estimated_tx_cu_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: this.name,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(15), (_, i) => 0 + i * 100_000),
-						true
-					),
-				}),
-				new View({
-					instrumentName: METRIC_TYPES.simulate_tx_duration_histogram,
-					instrumentType: InstrumentType.HISTOGRAM,
-					meterName: this.name,
-					aggregation: new ExplicitBucketHistogramAggregation(
-						Array.from(new Array(20), (_, i) => 50 + i * 50),
-						true
-					),
-				}),
-			],
-			metricsPort!
-		);
+		// this.metrics = new Metrics(
+		// 	this.name,
+		// 	[
+		// 		new View({
+		// 			instrumentName: METRIC_TYPES.try_fill_duration_histogram,
+		// 			instrumentType: InstrumentType.HISTOGRAM,
+		// 			meterName: this.name,
+		// 			aggregation: new ExplicitBucketHistogramAggregation(
+		// 				Array.from(new Array(20), (_, i) => 0 + i * 5),
+		// 				true
+		// 			),
+		// 		}),
+		// 		new View({
+		// 			instrumentName: METRIC_TYPES.estimated_tx_cu_histogram,
+		// 			instrumentType: InstrumentType.HISTOGRAM,
+		// 			meterName: this.name,
+		// 			aggregation: new ExplicitBucketHistogramAggregation(
+		// 				Array.from(new Array(15), (_, i) => 0 + i * 100_000),
+		// 				true
+		// 			),
+		// 		}),
+		// 		new View({
+		// 			instrumentName: METRIC_TYPES.simulate_tx_duration_histogram,
+		// 			instrumentType: InstrumentType.HISTOGRAM,
+		// 			meterName: this.name,
+		// 			aggregation: new ExplicitBucketHistogramAggregation(
+		// 				Array.from(new Array(20), (_, i) => 50 + i * 50),
+		// 				true
+		// 			),
+		// 		}),
+		// 	],
+		// 	metricsPort!
+		// );
 		this.bootTimeMs = Date.now();
-		this.runtimeSpecsGauge = this.metrics.addGauge(
-			METRIC_TYPES.runtime_specs,
-			'Runtime sepcification of this program'
-		);
-		this.tryFillDurationHistogram = this.metrics.addHistogram(
-			METRIC_TYPES.try_fill_duration_histogram,
-			'Histogram of the duration of the try fill process'
-		);
-		this.estTxCuHistogram = this.metrics.addHistogram(
-			METRIC_TYPES.estimated_tx_cu_histogram,
-			'Histogram of the estimated fill cu used'
-		);
-		this.simulateTxHistogram = this.metrics.addHistogram(
-			METRIC_TYPES.simulate_tx_duration_histogram,
-			'Histogram of the duration of simulateTransaction RPC calls'
-		);
-		this.lastTryFillTimeGauge = this.metrics.addGauge(
-			METRIC_TYPES.last_try_fill_time,
-			'Last time that fill was attempted'
-		);
-		this.mutexBusyCounter = this.metrics.addCounter(
-			METRIC_TYPES.mutex_busy,
-			'Count of times the mutex was busy'
-		);
-		this.landedTxsCounter = this.metrics.addCounter(
-			METRIC_TYPES.landed_transactions,
-			'Count of fills that we successfully landed'
-		);
-		this.sentTxsCounter = this.metrics.addCounter(
-			METRIC_TYPES.sent_transactions,
-			'Count of transactions we sent out'
-		);
-		this.txSimErrorCounter = this.metrics.addCounter(
-			METRIC_TYPES.tx_sim_error_count,
-			'Count of errors from simulating transactions'
-		);
-		this.pendingTxSigsToConfirmGauge = this.metrics.addGauge(
-			METRIC_TYPES.pending_tx_sigs_to_confirm,
-			'Count of tx sigs that are pending confirmation'
-		);
-		this.pendingTxSigsLoopRateLimitedCounter = this.metrics.addCounter(
-			METRIC_TYPES.pending_tx_sigs_loop_rate_limited,
-			'Count of times the pending tx sigs loop was rate limited'
-		);
-		this.evictedPendingTxSigsToConfirmCounter = this.metrics.addCounter(
-			METRIC_TYPES.evicted_pending_tx_sigs_to_confirm,
-			'Count of tx sigs that were evicted from the pending tx sigs to confirm cache'
-		);
-		this.expiredNodesSetSize = this.metrics.addGauge(
-			METRIC_TYPES.expired_nodes_set_size,
-			'Count of nodes that are expired'
-		);
-		this.jitoBundlesAcceptedGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_bundles_accepted,
-			'Count of jito bundles that were accepted'
-		);
-		this.jitoBundlesSimulationFailureGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_bundles_simulation_failure,
-			'Count of jito bundles that failed simulation'
-		);
-		this.jitoDroppedBundleGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_dropped_bundle,
-			'Count of jito bundles that were dropped'
-		);
-		this.jitoLandedTipsGauge = this.metrics.addGauge(
-			METRIC_TYPES.jito_landed_tips,
-			'Gauge of historic bundle tips that landed'
-		);
-		this.jitoBundleCount = this.metrics.addGauge(
-			METRIC_TYPES.jito_bundle_count,
-			'Count of jito bundles that were sent, and their status'
-		);
-		this.clockSubscriberTs = this.metrics.addGauge(
-			METRIC_TYPES.clock_subscriber_ts,
-			'Timestamp of the clock subscriber'
-		);
-		this.wallClockTs = this.metrics.addGauge(
-			METRIC_TYPES.wall_clock_ts,
-			'Timestamp of the wall clock'
-		);
+		// this.runtimeSpecsGauge = this.metrics.addGauge(
+		// 	METRIC_TYPES.runtime_specs,
+		// 	'Runtime sepcification of this program'
+		// );
+		// this.tryFillDurationHistogram = this.metrics.addHistogram(
+		// 	METRIC_TYPES.try_fill_duration_histogram,
+		// 	'Histogram of the duration of the try fill process'
+		// );
+		// this.estTxCuHistogram = this.metrics.addHistogram(
+		// 	METRIC_TYPES.estimated_tx_cu_histogram,
+		// 	'Histogram of the estimated fill cu used'
+		// );
+		// this.simulateTxHistogram = this.metrics.addHistogram(
+		// 	METRIC_TYPES.simulate_tx_duration_histogram,
+		// 	'Histogram of the duration of simulateTransaction RPC calls'
+		// );
+		// this.lastTryFillTimeGauge = this.metrics.addGauge(
+		// 	METRIC_TYPES.last_try_fill_time,
+		// 	'Last time that fill was attempted'
+		// );
+		// this.mutexBusyCounter = this.metrics.addCounter(
+		// 	METRIC_TYPES.mutex_busy,
+		// 	'Count of times the mutex was busy'
+		// );
+		// this.landedTxsCounter = this.metrics.addCounter(
+		// 	METRIC_TYPES.landed_transactions,
+		// 	'Count of fills that we successfully landed'
+		// );
+		// this.sentTxsCounter = this.metrics.addCounter(
+		// 	METRIC_TYPES.sent_transactions,
+		// 	'Count of transactions we sent out'
+		// );
+		// this.txSimErrorCounter = this.metrics.addCounter(
+		// 	METRIC_TYPES.tx_sim_error_count,
+		// 	'Count of errors from simulating transactions'
+		// );
+		// this.pendingTxSigsToConfirmGauge = this.metrics.addGauge(
+		// 	METRIC_TYPES.pending_tx_sigs_to_confirm,
+		// 	'Count of tx sigs that are pending confirmation'
+		// );
+		// this.pendingTxSigsLoopRateLimitedCounter = this.metrics.addCounter(
+		// 	METRIC_TYPES.pending_tx_sigs_loop_rate_limited,
+		// 	'Count of times the pending tx sigs loop was rate limited'
+		// );
+		// this.evictedPendingTxSigsToConfirmCounter = this.metrics.addCounter(
+		// 	METRIC_TYPES.evicted_pending_tx_sigs_to_confirm,
+		// 	'Count of tx sigs that were evicted from the pending tx sigs to confirm cache'
+		// );
+		// this.expiredNodesSetSize = this.metrics.addGauge(
+		// 	METRIC_TYPES.expired_nodes_set_size,
+		// 	'Count of nodes that are expired'
+		// );
+		// this.jitoBundlesAcceptedGauge = this.metrics.addGauge(
+		// 	METRIC_TYPES.jito_bundles_accepted,
+		// 	'Count of jito bundles that were accepted'
+		// );
+		// this.jitoBundlesSimulationFailureGauge = this.metrics.addGauge(
+		// 	METRIC_TYPES.jito_bundles_simulation_failure,
+		// 	'Count of jito bundles that failed simulation'
+		// );
+		// this.jitoDroppedBundleGauge = this.metrics.addGauge(
+		// 	METRIC_TYPES.jito_dropped_bundle,
+		// 	'Count of jito bundles that were dropped'
+		// );
+		// this.jitoLandedTipsGauge = this.metrics.addGauge(
+		// 	METRIC_TYPES.jito_landed_tips,
+		// 	'Gauge of historic bundle tips that landed'
+		// );
+		// this.jitoBundleCount = this.metrics.addGauge(
+		// 	METRIC_TYPES.jito_bundle_count,
+		// 	'Count of jito bundles that were sent, and their status'
+		// );
+		// this.clockSubscriberTs = this.metrics.addGauge(
+		// 	METRIC_TYPES.clock_subscriber_ts,
+		// 	'Timestamp of the clock subscriber'
+		// );
+		// this.wallClockTs = this.metrics.addGauge(
+		// 	METRIC_TYPES.wall_clock_ts,
+		// 	'Timestamp of the wall clock'
+		// );
 
-		this.metrics?.finalizeObservables();
+		// this.metrics?.finalizeObservables();
 
-		this.runtimeSpecsGauge.setLatestValue(this.bootTimeMs, this.runtimeSpec);
+		// this.runtimeSpecsGauge.setLatestValue(this.bootTimeMs, this.runtimeSpec);
 		this.metricsInitialized = true;
 	}
 
@@ -572,7 +572,8 @@ export class FillerBot implements Bot {
 		this.userStatsMap = new UserStatsMap(this.driftClient, userStatsLoader);
 
 		logger.info(
-			`Initialized userStatsMap: ${this.userStatsMap.size()}, took: ${Date.now() - startInitUserStatsMap
+			`Initialized userStatsMap: ${this.userStatsMap.size()}, took: ${
+				Date.now() - startInitUserStatsMap
 			} ms`
 		);
 
@@ -626,7 +627,8 @@ export class FillerBot implements Bot {
 		}
 
 		logger.info(
-			`${this.name} Bot started! (websocket: ${this.bulkAccountLoader === undefined
+			`${this.name} Bot started! (websocket: ${
+				this.bulkAccountLoader === undefined
 			})`
 		);
 	}
@@ -778,7 +780,8 @@ export class FillerBot implements Bot {
 			this.confirmLoopRateLimitTs + CONFIRM_TX_RATE_LIMIT_BACKOFF_MS;
 		if (Date.now() < nextTimeCanRun) {
 			logger.warn(
-				`Skipping confirm loop due to rate limit, next run in ${nextTimeCanRun - Date.now()
+				`Skipping confirm loop due to rate limit, next run in ${
+					nextTimeCanRun - Date.now()
 				} ms`
 			);
 			return;
@@ -810,7 +813,8 @@ export class FillerBot implements Bot {
 					const fillTxId = txConfirmationInfo[1].fillTxId;
 					if (txResp === null) {
 						logger.info(
-							`Tx not found, (fillTxId: ${fillTxId}) (txType: ${txType}): ${txSig}, tx age: ${txAge / 1000
+							`Tx not found, (fillTxId: ${fillTxId}) (txType: ${txType}): ${txSig}, tx age: ${
+								txAge / 1000
 							} s`
 						);
 						if (Math.abs(txAge) > TX_TIMEOUT_THRESHOLD_MS) {
@@ -818,7 +822,8 @@ export class FillerBot implements Bot {
 						}
 					} else {
 						logger.info(
-							`Tx landed (fillTxId: ${fillTxId}) (txType: ${txType}): ${txSig}, tx age: ${txAge / 1000
+							`Tx landed (fillTxId: ${fillTxId}) (txType: ${txType}): ${txSig}, tx age: ${
+								txAge / 1000
 							} s`
 						);
 						this.pendingTxSigsToconfirm.delete(txSig);
@@ -1352,8 +1357,10 @@ export class FillerBot implements Bot {
 						true
 					);
 					logger.error(
-						`assoc node (ixIdx: ${ixIdx}): ${filledNode.node.userAccount!.toString()}, ${filledNode.node.order!.orderId
-						}; does not exist (filled by someone else); ${log}, expired: ${isExpired}, orderTs: ${filledNode.node.order!.maxTs
+						`assoc node (ixIdx: ${ixIdx}): ${filledNode.node.userAccount!.toString()}, ${
+							filledNode.node.order!.orderId
+						}; does not exist (filled by someone else); ${log}, expired: ${isExpired}, orderTs: ${
+							filledNode.node.order!.maxTs
 						}, now: ${Date.now() / 1000}`
 					);
 					if (isExpired) {
@@ -1410,8 +1417,10 @@ export class FillerBot implements Bot {
 								});
 							}
 							webhookMessage(
-								`[${this.name
-								}]: :x: error forceCancelling user ${makerBreachedMaintenanceMargin} for maker breaching margin tx logs:\n${e.stack ? e.stack : e.message
+								`[${
+									this.name
+								}]: :x: error forceCancelling user ${makerBreachedMaintenanceMargin} for maker breaching margin tx logs:\n${
+									e.stack ? e.stack : e.message
 								}`
 							);
 						}
@@ -1427,7 +1436,8 @@ export class FillerBot implements Bot {
 				const filledNode = nodesFilled[ixIdx];
 				const takerNodeSignature = filledNode.node.userAccount!;
 				logger.error(
-					`taker breach maint. margin, assoc node (ixIdx: ${ixIdx}): ${filledNode.node.userAccount!.toString()}, ${filledNode.node.order!.orderId
+					`taker breach maint. margin, assoc node (ixIdx: ${ixIdx}): ${filledNode.node.userAccount!.toString()}, ${
+						filledNode.node.order!.orderId
 					}; (throttling ${takerNodeSignature} and force cancelling orders); ${log}`
 				);
 				this.setThrottledNode(takerNodeSignature);
@@ -1452,7 +1462,8 @@ export class FillerBot implements Bot {
 						const userCanceling = filledNode.node.userAccount!.toString();
 						console.error(e);
 						logger.error(
-							`Failed to send ForceCancelOrder Tx for taker (${userCanceling} - ${filledNode.node.order!.orderId
+							`Failed to send ForceCancelOrder Tx for taker (${userCanceling} - ${
+								filledNode.node.order!.orderId
 							}) breach maint. margin (error above):`
 						);
 						const errorCode = getErrorCode(e);
@@ -1472,8 +1483,10 @@ export class FillerBot implements Bot {
 								});
 							}
 							webhookMessage(
-								`[${this.name
-								}]: :x: error forceCancelling user ${userCanceling} for taker breaching maint. margin tx logs:\n${e.stack ? e.stack : e.message
+								`[${
+									this.name
+								}]: :x: error forceCancelling user ${userCanceling} for taker breaching maint. margin tx logs:\n${
+									e.stack ? e.stack : e.message
 								}`
 							);
 						}
@@ -1630,13 +1643,17 @@ export class FillerBot implements Bot {
 
 					if (e.message.includes('too large:')) {
 						logger.error(
-							`[${this.name
-							}]: :boxing_glove: Tx too large, estimated to be ${estTxSize} (fillTxId: ${fillTxId}). ${e.message
+							`[${
+								this.name
+							}]: :boxing_glove: Tx too large, estimated to be ${estTxSize} (fillTxId: ${fillTxId}). ${
+								e.message
 							}\n${JSON.stringify(accountMetas)}`
 						);
 						webhookMessage(
-							`[${this.name
-							}]: :boxing_glove: Tx too large (fillTxId: ${fillTxId}). ${e.message
+							`[${
+								this.name
+							}]: :boxing_glove: Tx too large (fillTxId: ${fillTxId}). ${
+								e.message
 							}\n${JSON.stringify(accountMetas)}`
 						);
 						return;
@@ -1665,12 +1682,14 @@ export class FillerBot implements Bot {
 							});
 
 							logger.error(
-								`Failed to send tx, sim error (fillTxId: ${fillTxId}) sim logs:\n${simError.logs ? simError.logs.join('\n') : ''
+								`Failed to send tx, sim error (fillTxId: ${fillTxId}) sim logs:\n${
+									simError.logs ? simError.logs.join('\n') : ''
 								}\n${e.stack || e}`
 							);
 
 							webhookMessage(
-								`[${this.name}]: :x: error simulating tx:\n${simError.logs ? simError.logs.join('\n') : ''
+								`[${this.name}]: :x: error simulating tx:\n${
+									simError.logs ? simError.logs.join('\n') : ''
 								}\n${e.stack || e}`
 							);
 						}
@@ -1810,7 +1829,8 @@ export class FillerBot implements Bot {
 			let attempt = 0;
 			while (txAccounts > MAX_ACCOUNTS_PER_TX && makerInfosToUse.length > 0) {
 				logger.info(
-					`(fillTxId: ${fillTxId} attempt ${attempt++}) Too many accounts, remove 1 and try again (had ${makerInfosToUse.length
+					`(fillTxId: ${fillTxId} attempt ${attempt++}) Too many accounts, remove 1 and try again (had ${
+						makerInfosToUse.length
 					} maker and ${txAccounts} accounts)`
 				);
 				makerInfosToUse = makerInfosToUse.slice(0, makerInfosToUse.length - 1);
@@ -1870,7 +1890,8 @@ export class FillerBot implements Bot {
 		} catch (e) {
 			if (e instanceof Error) {
 				logger.error(
-					`Error filling multi maker perp node (fillTxId: ${fillTxId}): ${e.stack ? e.stack : e.message
+					`Error filling multi maker perp node (fillTxId: ${fillTxId}): ${
+						e.stack ? e.stack : e.message
 					}`
 				);
 			}
@@ -2072,8 +2093,10 @@ export class FillerBot implements Bot {
 				ixs.length > startingIxsSize + 1 // ensure at least 1 attempted fill
 			) {
 				logger.info(
-					`Fully packed fill tx (ixs: ${ixs.length}): est. tx size ${runningTxSize + newIxCost + additionalAccountsCost
-					}, max: ${MAX_TX_PACK_SIZE}, est. CU used: expected ${runningCUUsed + cuToUsePerFill
+					`Fully packed fill tx (ixs: ${ixs.length}): est. tx size ${
+						runningTxSize + newIxCost + additionalAccountsCost
+					}, max: ${MAX_TX_PACK_SIZE}, est. CU used: expected ${
+						runningCUUsed + cuToUsePerFill
 					}, max: ${MAX_CU_PER_TX}, (fillTxId: ${fillTxId})`
 				);
 				break;
@@ -2226,7 +2249,8 @@ export class FillerBot implements Bot {
 				nodeToTrigger.node.userAccount.toString()
 			);
 			logger.info(
-				`trying to trigger (account: ${nodeToTrigger.node.userAccount.toString()}, slot: ${user.slot
+				`trying to trigger (account: ${nodeToTrigger.node.userAccount.toString()}, slot: ${
+					user.slot
 				}) order ${nodeToTrigger.node.order.orderId.toString()}`
 			);
 
@@ -2322,8 +2346,10 @@ export class FillerBot implements Bot {
 										);
 										logger.error(error);
 										webhookMessage(
-											`[${this.name
-											}]: :x: Error (${errorCode}) triggering order for user (account: ${nodeToTrigger.node.userAccount.toString()}) order: ${nodeToTrigger.node.order.orderId.toString()}\n${error.stack ? error.stack : error.message
+											`[${
+												this.name
+											}]: :x: Error (${errorCode}) triggering order for user (account: ${nodeToTrigger.node.userAccount.toString()}) order: ${nodeToTrigger.node.order.orderId.toString()}\n${
+												error.stack ? error.stack : error.message
 											}`
 										);
 									}
@@ -2635,7 +2661,8 @@ export class FillerBot implements Bot {
 						if (e instanceof Error) {
 							console.error(e);
 							webhookMessage(
-								`[${this.name}]: :x: Failed to get fillable nodes for market ${market.marketIndex
+								`[${this.name}]: :x: Failed to get fillable nodes for market ${
+									market.marketIndex
 								}:\n${e.stack ? e.stack : e.message}`
 							);
 						}
@@ -2680,7 +2707,8 @@ export class FillerBot implements Bot {
 			} else {
 				if (e instanceof Error) {
 					webhookMessage(
-						`[${this.name}]: :x: uncaught error:\n${e.stack ? e.stack : e.message
+						`[${this.name}]: :x: uncaught error:\n${
+							e.stack ? e.stack : e.message
 						}`
 					);
 				}
